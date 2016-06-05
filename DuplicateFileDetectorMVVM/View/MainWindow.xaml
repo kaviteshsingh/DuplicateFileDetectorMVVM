@@ -1,0 +1,141 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ViewModel="clr-namespace:DuplicateFileDetectorMVVM.ViewModel"
+        xmlns:ValueConverters="clr-namespace:DuplicateFileDetectorMVVM.ValueConverters" x:Class="DuplicateFileDetectorMVVM.MainWindow"
+        Title="MainWindow" MinHeight="700" MinWidth="800" WindowStartupLocation =" CenterScreen">
+    <Window.Resources>
+        <ValueConverters:InScanProgressToBrowseButton x:Key="InScanProgressToBrowseButton"/>
+        <ValueConverters:FileSizeInBytesToKiloBytes x:Key="FileSizeInBytesToKiloBytes"/>
+    </Window.Resources>
+    <Window.DataContext>
+        <ViewModel:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="10">
+            <TextBlock Text="Directory: " HorizontalAlignment="Left" Margin="3" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            <TextBlock x:Name="TextBlockFolderPath" Text="{Binding FolderPath}" HorizontalAlignment="Left" Margin="3" TextWrapping="Wrap" VerticalAlignment="Center" MinWidth="300" />
+            <Button x:Name="BrowseButton" Content="Browse" HorizontalAlignment="Center" Margin="3" MinWidth="100" VerticalAlignment="Center" Click="BrowseButton_Click" IsEnabled="{Binding IsScanInProgress, Converter={StaticResource InScanProgressToBrowseButton}}" />
+            <Button x:Name="DirScanButton" Command="{Binding CmdBeginScan}" IsEnabled="{Binding IsScanInProgress, Converter={StaticResource InScanProgressToBrowseButton}}" Content="{Binding ScanButtonCaption}" HorizontalAlignment="Center" Margin="3" VerticalAlignment="Center" MinWidth="100"/>
+        </StackPanel>
+
+        <GroupBox Grid.Row="1" Header="Directory Statistics" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="7*" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="Last Found File: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center" />
+                <Label Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding FileEnumCurrentFile.FileName}"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Last Found File Size (KB): " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center" />
+                <Label Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding FileEnumCurrentFile.Size, Converter={StaticResource FileSizeInBytesToKiloBytes}}" />
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Total Files Found: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center" />
+                <Label Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding FileEnumTotalFilesScanned}" />
+
+                <Label Grid.Row="3" Grid.Column="0" Content="Total Time:" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center"/>
+                <Label Grid.Row="3" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding FileEnumTotalTimeForScan}"/>
+
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Header="Hash Calculation" Grid.Row="2" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="7*" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="Last File: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center" />
+                <Label Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding HashCurrentFile.FileName}"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="Last File Hash: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center" />
+                <Label Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding HashCurrentFile.Hash}" />
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Last File Size (KB):" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center"/>
+                <Label Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding HashCurrentFile.Size, Converter={StaticResource FileSizeInBytesToKiloBytes}}"/>
+                
+                <Label Grid.Row="3" Grid.Column="0" Content="Size Buckets:" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center"/>
+                <Label Grid.Row="3" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding NumberOfBuckets}"/>
+
+                <Label Grid.Row="4" Grid.Column="0" Content="Potential Duplicates:" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Center"/>
+                <Label Grid.Row="4" Grid.Column="1" HorizontalAlignment="Left" Margin="3" VerticalAlignment="Center" Content="{Binding DuplicateFileList.Count}"/>
+
+            </Grid>
+        </GroupBox>
+
+
+        <Grid x:Name="GridResult" Grid.Row="3">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="8*" />
+                    <RowDefinition Height="2*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="7*" />
+                    <ColumnDefinition Width="3*" />
+                </Grid.ColumnDefinitions>
+
+                <DataGrid Grid.Row="0" Grid.ColumnSpan="2" x:Name="ResultDataGrid" Margin="5" SelectionMode="Extended" SelectionUnit="FullRow" 
+                          IsReadOnly="True" AlternatingRowBackground="Gainsboro"  AlternationCount="1" 
+                          ItemsSource="{Binding DuplicateFileList}" AutoGenerateColumns="False" MouseLeftButtonDown="ResultDataGrid_MouseLeftButtonDown">
+
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="ToolTip" Value="{Binding FullFilePath}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Hash" Width="2.5*"
+                      Binding="{Binding Hash}"/>
+                        <DataGridTextColumn Header="File Name" Width="2*"
+                      Binding="{Binding FileName}"/>
+
+                        <DataGridTextColumn Header="Full File Path" Width="4.5*" 
+                      Binding="{Binding FullFilePath}">
+                            <!--<DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="ToolTip" Value="{Binding FullFilePath}" />
+                                </Style>
+                            </DataGridTextColumn.CellStyle>-->
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Size (bytes)" Width="1*"
+                      Binding="{Binding Size}"/>
+                    </DataGrid.Columns>
+
+                </DataGrid>
+                <Button Grid.Row="1" Grid.Column="1" x:Name="DeleteItemsButton" Content="Delete Selected Items" HorizontalAlignment="Center" Margin="3" VerticalAlignment="Center" MinWidth="100" Command="{Binding CmdDeleteSelectedList, Mode=OneWay}" CommandParameter="{Binding SelectedItems, ElementName=ResultDataGrid}" IsEnabled="{Binding SelectedItems.Count, ElementName=ResultDataGrid, Mode=OneWay}"/>
+            </Grid>
+        </Grid>
+
+
+    </Grid>
+
+</Window>
