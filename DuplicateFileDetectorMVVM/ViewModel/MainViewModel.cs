@@ -54,6 +54,13 @@ namespace DuplicateFileDetectorMVVM.ViewModel
             set { _HashCurrentFile = value; base.OnPropertyChanged("HashCurrentFile"); }
         }
 
+        private ObservableCollection<string> _ErrorList;
+
+        public ObservableCollection<string> ErrorList
+        {
+            get { return _ErrorList; }
+            set { _ErrorList = value; base.OnPropertyChanged("ErrorList"); }
+        }
 
         private ObservableCollection<FileDetail> _DuplicateFileList;
         public ObservableCollection<FileDetail> DuplicateFileList
@@ -97,16 +104,6 @@ namespace DuplicateFileDetectorMVVM.ViewModel
             get { return _NumberOfBuckets; }
             set { _NumberOfBuckets = value; base.OnPropertyChanged("NumberOfBuckets"); }
         }
-
-        //private UInt64 _PotentialDuplicates;
-
-        //public UInt64 PotentialDuplicates
-        //{
-        //    get { return _PotentialDuplicates; }
-        //    set { _PotentialDuplicates = value; base.OnPropertyChanged("PotentialDuplicates"); }
-        //}
-
-
 
         private ICommand _CmdBeginScan;
         public ICommand CmdBeginScan
@@ -210,6 +207,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
         {
             DisplayName = "MainViewModel";
             DuplicateFileList = new ObservableCollection<FileDetail>();
+            ErrorList = new ObservableCollection<string>();
 
             _dirFileEnumeration = new DirFileEnumeration(this);
             _dirFileEnumeration.FileFound += _dirFileEnumeration_FileFound;
@@ -309,6 +307,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
             {
                 // Observable collection needs to be accessed in UI thread.
                 DuplicateFileList.Clear();
+                ErrorList.Clear();
             }));
 
             _start = DateTime.Now;
@@ -382,6 +381,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
                      Can use some status bar binding to communicate errors in deleting in files
                      Messagebox might not be preferred or maybe list of errors. 
                      */
+                    ErrorList.Add(Ex.Message);
                     System.Diagnostics.Debug.WriteLine(Ex.Message);
                 }
 
