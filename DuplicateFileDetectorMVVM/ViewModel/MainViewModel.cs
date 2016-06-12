@@ -113,7 +113,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
         {
             get
             {
-                if(_CmdBeginScan == null)
+                if (_CmdBeginScan == null)
                 {
                     _CmdBeginScan = new RelayCommand(
                         param => this.CmdBeginScanHandler()
@@ -129,7 +129,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
         {
             get
             {
-                if(_CmdSetFolderPath == null)
+                if (_CmdSetFolderPath == null)
                 {
                     _CmdSetFolderPath = new RelayCommand(
                         param => this.CmdSetFolderPathHandler(param)
@@ -145,7 +145,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
         {
             get
             {
-                if(_CmdDeleteSelectedList == null)
+                if (_CmdDeleteSelectedList == null)
                 {
                     _CmdDeleteSelectedList = new RelayCommand(
                         param => this.CmdDeleteSelectedListHandler(param)
@@ -176,7 +176,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
         {
             System.Diagnostics.Debug.WriteLine("CmdBeginScanHandler..");
 
-            if(Directory.Exists(param as string))
+            if (Directory.Exists(param as string))
             {
                 FolderPath = param as string;
                 CanScanFiles = true;
@@ -190,13 +190,11 @@ namespace DuplicateFileDetectorMVVM.ViewModel
         }
 
 
-        void CmdBeginScanHandler()
+        async void CmdBeginScanHandler()
         {
             System.Diagnostics.Debug.WriteLine("CmdBeginScanHandler..");
-
-            ThreadPool.QueueUserWorkItem(ThreadPoolWorkerFileEnumeration, this);
-
-
+            //ThreadPool.QueueUserWorkItem(ThreadPoolWorkerFileEnumeration, this);
+            await Task.Run(() => ThreadPoolWorkerFileEnumeration(this));
         }
 
 
@@ -216,9 +214,6 @@ namespace DuplicateFileDetectorMVVM.ViewModel
             _dirFileEnumeration = new DirFileEnumeration(this);
             _dirFileEnumeration.FileFound += _dirFileEnumeration_FileFound;
 
-            //FileEnumCurrentFile = new FileDetail();
-            //HashCurrentFile = new FileDetail();
-
             this.CanScanFiles = false;
             this.ScanButtonCaption = "Begin Scan";
             this.IsScanInProgress = false;
@@ -228,8 +223,12 @@ namespace DuplicateFileDetectorMVVM.ViewModel
 
         void _dirFileEnumeration_FileFound(object sender, FileFoundEventArgs e)
         {
-            /*
-             * 
+            /* _HashInfoFiles is dictionary containing files of different hashes.
+             * Key is hash and value is list of file details with same hash.
+             * _FileSizeInfo contains key-value of file size and one file detail.
+             * _FileSizeInfo basically helps check if there are any duplicate files
+             * based on the file size. If yes, then file detail will be added in 
+             * _HashInfoFiles dictionary.
              */
 
             FileEnumTotalFilesScanned++;
@@ -238,10 +237,17 @@ namespace DuplicateFileDetectorMVVM.ViewModel
 
             FileDetail fileDetail = null;
 
-            if(_FileSizeInfo.TryGetValue(FileEnumCurrentFile.Size, out fileDetail))
+            if (_FileSizeInfo.TryGetValue(FileEnumCurrentFile.Size, out fileDetail))
             {
+                /*
+                 * We found a duplicate entry if we reach this code section. 
+                 * Get the first file from _FileSizeInfo dictionary. Check if hash value is calculated.
+                 * If not, this is the first entry so calculate the hash value and then add it to 
+                 * _HashInfoFiles dictionary based on the hash. This will be the first hash entry in the
+                 * _HashInfoFiles dictionary
+                 */
                 List<FileDetail> list = null;
-                if(fileDetail.Hash == null || fileDetail.Hash.Length == 0)
+                if (string.IsNullOrEmpty(fileDetail.Hash))
                 {
                     fileDetail.Hash = Hashing.MD5Hash.GetMD5HashFromFile(fileDetail.FullFilePath);
                     HashCurrentFile = fileDetail;
@@ -252,10 +258,16 @@ namespace DuplicateFileDetectorMVVM.ViewModel
 
                 list = null;
 
+                /* 
+                 * This is second entry or subsequent file, so calculate the hash for this file.
+                 * Then check if that hash exists in the _HashInfoFiles dictionary. If yes, then simply
+                 * add it to the list of files denoted by value in dictionary.
+                 * If this is unique hash then simply create a key,value entry and add it to _HashInfoFiles. 
+                 */
                 FileEnumCurrentFile.Hash = Hashing.MD5Hash.GetMD5HashFromFile(FileEnumCurrentFile.FullFilePath);
                 HashCurrentFile = FileEnumCurrentFile;
 
-                if(_HashInfoFiles.TryGetValue(FileEnumCurrentFile.Hash, out list))
+                if (_HashInfoFiles.TryGetValue(FileEnumCurrentFile.Hash, out list))
                 {
                     list.Add(FileEnumCurrentFile);
                 }
@@ -269,7 +281,11 @@ namespace DuplicateFileDetectorMVVM.ViewModel
             }
             else
             {
-                // no hash calculation
+                /*
+                * If there is no key with the file size, then simply add the file info to the
+                * _FileSizeInfo dictionary without doing any hash calculation. Hash will be calculated
+                * only if another match is found.
+                */
                 fileDetail = new FileDetail(FileEnumCurrentFile);
                 _FileSizeInfo.Add(FileEnumCurrentFile.Size, fileDetail);
                 NumberOfBuckets = _FileSizeInfo.Count;
@@ -284,7 +300,6 @@ namespace DuplicateFileDetectorMVVM.ViewModel
             FileEnumTotalFilesScanned = 0;
             FileEnumTotalTimeForScan = "";
             NumberOfBuckets = 0;
-            //PotentialDuplicates = 0;
 
             IsScanInProgress = true;
             _FileSizeInfo.Clear();
@@ -292,6 +307,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
 
             Application.Current.Dispatcher.Invoke((Action)(() =>
             {
+                // Observable collection needs to be accessed in UI thread.
                 DuplicateFileList.Clear();
             }));
 
@@ -302,22 +318,24 @@ namespace DuplicateFileDetectorMVVM.ViewModel
             MainViewModel mvm = state as MainViewModel;
             _dirFileEnumeration.EnumerateFiles(mvm.FolderPath);
 
-            // remove single entries
-            // loop in reverse (bottom up) else when removing index from start, ordering gets corrupted.
-            for(int i = _HashInfoFiles.Count - 1; i >= 0; i--)
+            /* remove single entries of hashes
+             * loop in reverse (bottom up) else when removing index from start, ordering gets corrupted. 
+             */
+            for (int i = _HashInfoFiles.Count - 1; i >= 0; i--)
             {
                 KeyValuePair<string, List<FileDetail>> keyvalue = _HashInfoFiles.ElementAt(i);
 
-                if(keyvalue.Value.Count < 2)
+                if (keyvalue.Value.Count < 2)
                 {
                     _HashInfoFiles.Remove(keyvalue.Key);
                 }
                 else
                 {
-                    foreach(var item in keyvalue.Value)
+                    foreach (var item in keyvalue.Value)
                     {
                         Application.Current.Dispatcher.Invoke((Action)(() =>
                         {
+                            // access in UI thread.
                             DuplicateFileList.Add(item);
                         }));
 
@@ -344,7 +362,7 @@ namespace DuplicateFileDetectorMVVM.ViewModel
         {
             System.Collections.IList list = (System.Collections.IList)state;
 
-            for(int i = list.Count - 1; i >= 0; i--)
+            for (int i = list.Count - 1; i >= 0; i--)
             {
                 FileDetail fd = (FileDetail)list[i];
 
@@ -354,12 +372,16 @@ namespace DuplicateFileDetectorMVVM.ViewModel
 
                     Application.Current.Dispatcher.Invoke((Action)(() =>
                     {
+                        // access in UI thread.
                         DuplicateFileList.Remove(fd);
                     }));
                 }
-                catch(Exception Ex)
+                catch (Exception Ex)
                 {
-                    //System.Windows.MessageBox.Show(Ex.Message);
+                    /*
+                     Can use some status bar binding to communicate errors in deleting in files
+                     Messagebox might not be preferred or maybe list of errors. 
+                     */
                     System.Diagnostics.Debug.WriteLine(Ex.Message);
                 }
 

@@ -8,11 +8,17 @@
         <ValueConverters:InScanProgressToBrowseButton x:Key="InScanProgressToBrowseButton"/>
         <ValueConverters:FileSizeInBytesToKiloBytes x:Key="FileSizeInBytesToKiloBytes"/>
     </Window.Resources>
+
+    <Window.InputBindings>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding CmdBeginScan}" />
+    </Window.InputBindings>
+
     <Window.DataContext>
         <ViewModel:MainViewModel/>
     </Window.DataContext>
 
-    <Grid>
+
+        <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
