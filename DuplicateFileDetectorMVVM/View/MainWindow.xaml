@@ -139,8 +139,10 @@
 
                 </DataGrid>
                 <Button Grid.Row="1" Grid.Column="1" x:Name="DeleteItemsButton" Content="Delete Selected Items" HorizontalAlignment="Center" Margin="3" VerticalAlignment="Center" MinWidth="100" Command="{Binding CmdDeleteSelectedList, Mode=OneWay}" CommandParameter="{Binding SelectedItems, ElementName=ResultDataGrid}" IsEnabled="{Binding SelectedItems.Count, ElementName=ResultDataGrid, Mode=OneWay}"/>
+                <GroupBox Grid.Row="2" Grid.ColumnSpan="2"  Header="Errors">
+                    <ListBox Foreground="Red" ItemsSource="{Binding Path=ErrorList}" />
+                </GroupBox>
                 
-                <ListBox Grid.Row="2" Grid.ColumnSpan="2" Foreground="Red" ItemsSource="{Binding Path=ErrorList}" />
             </Grid>
         </Grid>
 

@@ -369,6 +369,9 @@ namespace DuplicateFileDetectorMVVM.ViewModel
                 {
                     File.Delete(fd.FullFilePath);
 
+                    // if exception happens the error list will show which file is not deleted.
+                    // The item will not be removed from the list as well. Helps if file is in use
+                    // and user can close it and try again.
                     Application.Current.Dispatcher.Invoke((Action)(() =>
                     {
                         // access in UI thread.
@@ -378,10 +381,14 @@ namespace DuplicateFileDetectorMVVM.ViewModel
                 catch (Exception Ex)
                 {
                     /*
-                     Can use some status bar binding to communicate errors in deleting in files
-                     Messagebox might not be preferred or maybe list of errors. 
+                     Update the list to reflect the errors when deleting file.  
                      */
-                    ErrorList.Add(Ex.Message);
+                    Application.Current.Dispatcher.Invoke((Action)(() =>
+                    {
+                        // access in UI thread.
+                        ErrorList.Add(Ex.Message);
+                    }));
+                    
                     System.Diagnostics.Debug.WriteLine(Ex.Message);
                 }
 
