@@ -153,6 +153,26 @@ namespace DuplicateFileDetectorMVVM.ViewModel
             }
         }
 
+        void ResetPublicProperties()
+        {
+            NumberOfBuckets = 0;
+            HashCurrentFile = null;
+            FileEnumCurrentFile = null;
+            FileEnumTotalFilesScanned = 0;
+            FileEnumTotalTimeForScan = null;
+
+            _FileSizeInfo.Clear();
+            _HashInfoFiles.Clear();
+
+            Application.Current.Dispatcher.Invoke((Action)(() =>
+            {
+                // Observable collection needs to be accessed in UI thread.
+                DuplicateFileList.Clear();
+                ErrorList.Clear();
+            }));
+
+
+        }
 
         #endregion
 
@@ -295,20 +315,9 @@ namespace DuplicateFileDetectorMVVM.ViewModel
         {
             System.Diagnostics.Debug.WriteLine("ThreadPoolWorkerFileEnumeration:: Start");
 
-            FileEnumTotalFilesScanned = 0;
-            FileEnumTotalTimeForScan = "";
-            NumberOfBuckets = 0;
-
+            ResetPublicProperties();
+        
             IsScanInProgress = true;
-            _FileSizeInfo.Clear();
-            _HashInfoFiles.Clear();
-
-            Application.Current.Dispatcher.Invoke((Action)(() =>
-            {
-                // Observable collection needs to be accessed in UI thread.
-                DuplicateFileList.Clear();
-                ErrorList.Clear();
-            }));
 
             _start = DateTime.Now;
             System.Diagnostics.Debug.WriteLine("START:: " + _start.ToString());
