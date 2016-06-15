@@ -10,9 +10,9 @@ using System.Windows;
 [assembly: AssemblyTitle("DuplicateFileDetectorMVVM")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Qualcomm Incorporated")]
+[assembly: AssemblyCompany("Kavitesh Singh")]
 [assembly: AssemblyProduct("DuplicateFileDetectorMVVM")]
-[assembly: AssemblyCopyright("Copyright © Qualcomm Incorporated 2016")]
+[assembly: AssemblyCopyright("Copyright © Kavitesh Singh 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
